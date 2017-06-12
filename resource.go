@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/Financial-Times/service-status-go/buildinfo"
+
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -20,6 +22,7 @@ type Endpoint interface {
 type endpoint struct {
 	yml       []byte
 	parsedAPI map[string]interface{}
+	buildInfo buildinfo.BuildInfo
 }
 
 // NewAPIEndpointForFile reads the swagger yml file at the provided location, and returns an Endpoint
@@ -40,7 +43,9 @@ func NewAPIEndpointForYAML(yml []byte) (Endpoint, error) {
 		return nil, err
 	}
 
-	return &endpoint{yml: yml, parsedAPI: api}, nil
+	build := buildinfo.GetBuildInfo()
+
+	return &endpoint{yml: yml, parsedAPI: api, buildInfo: build}, nil
 }
 
 // GetEndpoint returns the endpoint which handles API request and amends the relevant fields dynamically
@@ -62,6 +67,11 @@ func (e *endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api["host"] = parsed.Host
 	api["schemes"] = []string{"https"}
 	api["basePath"] = basePath(parsed.Path)
+
+	info, ok := api["info"].(map[interface{}]interface{})
+	if ok {
+		info["version"] = e.buildInfo.Version
+	}
 
 	out, err := yaml.Marshal(api)
 	if err != nil {

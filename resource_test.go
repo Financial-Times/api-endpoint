@@ -6,6 +6,7 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/Financial-Times/service-status-go/buildinfo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -82,6 +83,52 @@ func TestAPIOriginalRequestURLUnexpectedPath(t *testing.T) {
 	assert.Equal(t, "pub-dynpub-uk-up.ft.com", yml["host"])
 	assert.Equal(t, "/", yml["basePath"])
 	assert.Equal(t, []interface{}{"https"}, yml["schemes"])
+}
+
+func TestAPIVersionInfo(t *testing.T) {
+	req := httptest.NewRequest("GET", "/__api", nil)
+	req.Header.Add("X-Original-Request-URL", "https://pub-dynpub-uk-up.ft.com/__publish-carousel/__api")
+
+	actual := httptest.NewRecorder()
+	e, err := NewAPIEndpointForYAML([]byte(apiExample))
+	assert.NoError(t, err)
+
+	epoint := e.(*endpoint)
+	epoint.buildInfo = buildinfo.BuildInfo{Version: "4.0.1"}
+
+	e.ServeHTTP(actual, req)
+
+	yml := make(map[string]interface{})
+	err = yaml.Unmarshal(actual.Body.Bytes(), &yml)
+	require.NoError(t, err)
+
+	info, ok := yml["info"].(map[interface{}]interface{})
+	assert.True(t, ok)
+	assert.NotNil(t, info)
+
+	assert.Equal(t, "4.0.1", info["version"])
+}
+
+func TestAPIVersionNoInfoSection(t *testing.T) {
+	req := httptest.NewRequest("GET", "/__api", nil)
+	req.Header.Add("X-Original-Request-URL", "https://pub-dynpub-uk-up.ft.com/__publish-carousel/__api")
+
+	actual := httptest.NewRecorder()
+	e, err := NewAPIEndpointForYAML([]byte(shortAPIExample))
+	assert.NoError(t, err)
+
+	epoint := e.(*endpoint)
+	epoint.buildInfo = buildinfo.BuildInfo{Version: "4.0.1"}
+
+	e.ServeHTTP(actual, req)
+
+	yml := make(map[string]interface{})
+	err = yaml.Unmarshal(actual.Body.Bytes(), &yml)
+	require.NoError(t, err)
+
+	info, ok := yml["info"].(map[interface{}]interface{})
+	assert.False(t, ok)
+	assert.Nil(t, info)
 }
 
 const apiExample = `swagger: "2.0"
@@ -398,3 +445,33 @@ paths:
                description: The application is healthy enough to perform all its functions correctly - i.e. good to go.
             503:
                description: One or more of the applications healthchecks have failed, so please do not use the app. See the /__health endpoint for more detailed information.`
+
+const shortAPIExample = `swagger: "2.0"
+
+host: api.ft.com
+
+schemes:
+   - http
+   - https
+
+basePath: /
+
+paths:
+   /__build-info:
+      get:
+         summary: Build Information
+         description: Returns application build info, such as the git repository and revision, the golang version it was built with, and the app release version.
+         produces:
+            - application/json; charset=UTF-8
+         tags:
+            - Info
+         responses:
+            200:
+               description: Outputs build information as described in the summary.
+               examples:
+                  application/json; charset=UTF-8:
+                     version: "0.0.7"
+                     repository: "https://github.com/Financial-Times/publish-carousel.git"
+                     revision: "7cdbdb18b4a518eef3ebb1b545fc124612f9d7cd"
+                     builder: "go version go1.6.3 linux/amd64"
+                     dateTime: "20161123122615"`
