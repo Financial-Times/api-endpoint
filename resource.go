@@ -91,8 +91,8 @@ func copyMap(original map[string]interface{}) map[string]interface{} {
 }
 
 func basePath(path string) string {
-	if strings.HasSuffix(path, "/__api") {
-		return strings.TrimSuffix(path, "/__api")
+	if strings.HasSuffix(path, DefaultPath) {
+		return strings.TrimSuffix(path, DefaultPath)
 	}
 	return "/"
 }
