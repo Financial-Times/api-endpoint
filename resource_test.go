@@ -85,6 +85,44 @@ func TestAPIOriginalRequestURLUnexpectedPath(t *testing.T) {
 	assert.Equal(t, []interface{}{"https"}, yml["schemes"])
 }
 
+func TestSchemesChangeBasedOnRequestURL(t *testing.T) {
+	req := httptest.NewRequest("GET", "/__api", nil)
+	req.Header.Add("X-Original-Request-URL", "http://pub-dynpub-uk-up.ft.com/__publish-carousel/hello")
+
+	actual := httptest.NewRecorder()
+	endpoint, err := NewAPIEndpointForYAML([]byte(apiExample))
+	assert.NoError(t, err)
+
+	endpoint.ServeHTTP(actual, req)
+
+	yml := make(map[string]interface{})
+	err = yaml.Unmarshal(actual.Body.Bytes(), &yml)
+	require.NoError(t, err)
+
+	assert.Equal(t, "pub-dynpub-uk-up.ft.com", yml["host"])
+	assert.Equal(t, "/", yml["basePath"])
+	assert.Equal(t, []interface{}{"http"}, yml["schemes"])
+}
+
+func TestSchemeDefaultsToHTTPS(t *testing.T) {
+	req := httptest.NewRequest("GET", "/__api", nil)
+	req.Header.Add("X-Original-Request-URL", "/__publish-carousel/hello")
+
+	actual := httptest.NewRecorder()
+	endpoint, err := NewAPIEndpointForYAML([]byte(apiExample))
+	assert.NoError(t, err)
+
+	endpoint.ServeHTTP(actual, req)
+
+	yml := make(map[string]interface{})
+	err = yaml.Unmarshal(actual.Body.Bytes(), &yml)
+	require.NoError(t, err)
+
+	assert.Equal(t, "", yml["host"])
+	assert.Equal(t, "/", yml["basePath"])
+	assert.Equal(t, []interface{}{"https"}, yml["schemes"])
+}
+
 func TestAPIVersionInfo(t *testing.T) {
 	req := httptest.NewRequest("GET", "/__api", nil)
 	req.Header.Add("X-Original-Request-URL", "https://pub-dynpub-uk-up.ft.com/__publish-carousel/__api")
