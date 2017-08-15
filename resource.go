@@ -65,7 +65,13 @@ func (e *endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api := copyMap(e.parsedAPI)
 
 	api["host"] = parsed.Host
-	api["schemes"] = []string{"https"}
+
+	if parsed.Scheme != "" {
+		api["schemes"] = []string{parsed.Scheme}
+	} else { // assume https
+		api["schemes"] = []string{"https"}
+	}
+
 	api["basePath"] = basePath(parsed.Path)
 
 	info, ok := api["info"].(map[interface{}]interface{})
