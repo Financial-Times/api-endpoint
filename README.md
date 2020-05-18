@@ -1,5 +1,8 @@
 # API Endpoint
 
+[![CircleCI](https://circleci.com/gh/Financial-Times/api-endpoint.svg?style=svg&circle-token=8306aa3940706972bf819de112f141f04dd5ee37)](https://circleci.com/gh/Financial-Times/api-endpoint)
+[![Coverage Status](https://coveralls.io/repos/github/Financial-Times/api-endpoint/badge.svg?branch=master)](https://coveralls.io/github/Financial-Times/api-endpoint?branch=master)
+
 Serves an OpenAPI (Swagger) yml file on a common endpoint, amending values based on the request path.
 
 Currently, the endpoint will amend the following fields if the `X-Original-Request-URL` is set.
