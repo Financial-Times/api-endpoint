@@ -168,6 +168,8 @@ func (v *APIValidator) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	err = openapi3filter.ValidateRequest(ctx, requestValidationInput)
 	if err != nil {
 		v.log.WithError(err).Error("failed to validate request")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	v.next.ServeHTTP(w, req)
 }
