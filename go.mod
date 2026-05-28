@@ -1,6 +1,6 @@
 module github.com/Financial-Times/api-endpoint
 
-go 1.25
+go 1.26
 
 require (
 	github.com/Financial-Times/service-status-go v0.3.3
